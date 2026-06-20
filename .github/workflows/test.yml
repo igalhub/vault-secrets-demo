@@ -84,6 +84,15 @@ jobs:
         if: always()
         run: docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
 
+  # ── macOS job: currently inconclusive ────────────────────────────────────────
+  # This job was added to test whether the Linux bind-mount UID permission issue
+  # (mkdir /vault/data/core: permission denied) also affects macOS. It never got
+  # that far: Colima failed to start its VM on GitHub's hosted macos-latest
+  # runner with exit status 1 ("creating and starting" stage). GitHub's hosted
+  # macOS runners do not support nested virtualization, which Colima requires.
+  # The bind-mount question remains unanswered for macOS. The job is kept as-is
+  # as a record of the attempt; continue-on-error prevents it from blocking the
+  # Linux job's green status.
   test-macos:
     # Tracks whether this project works on macOS without the Linux-specific
     # bind-mount chmod/chown workaround. macOS runners use a VM-based Docker
@@ -93,6 +102,7 @@ jobs:
     # This job exists specifically to verify whether that difference means
     # the permission issue doesn't occur here, or occurs differently.
     runs-on: macos-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
