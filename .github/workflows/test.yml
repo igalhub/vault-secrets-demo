@@ -5,9 +5,8 @@ on:
   pull_request:
 
 jobs:
-  test:
+  test-linux:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -27,9 +26,6 @@ jobs:
       # which that UID cannot write to (mkdir /vault/data/core: permission denied).
       # Pre-creating it with 777 fixes that. Acceptable on an ephemeral runner;
       # not something we'd do on a persistent host — see docs/AWS_DEPLOYMENT.md.
-      # Locally the directory is created by Docker on first run and the container
-      # can write freely (teardown.sh uses a container to clean it up precisely
-      # because host-user rm fails on those container-owned files).
       - name: Prepare vault/data for container UID
         run: mkdir -p vault/data && chmod 777 vault/data
 
@@ -84,6 +80,72 @@ jobs:
       # ── Tear down ────────────────────────────────────────────────────────────
       # -v removes volumes so no Vault data (including the root token in the
       # file-storage backend) persists on the runner after the job ends.
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
+
+  test-macos:
+    # Tracks whether this project works on macOS without the Linux-specific
+    # bind-mount chmod/chown workaround. macOS runners use a VM-based Docker
+    # layer rather than native Linux bind mounts. bind-mount UID semantics go
+    # through the VM's filesystem layer, which may handle container-UID
+    # ownership differently than Linux's direct host-directory mounting.
+    # This job exists specifically to verify whether that difference means
+    # the permission issue doesn't occur here, or occurs differently.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Install Docker
+        run: |
+          brew install colima docker docker-compose
+          colima start
+
+      - name: Confirm Docker is available
+        run: docker --version && docker compose version
+
+      # ── Prepare vault/data ───────────────────────────────────────────────────
+      # Deliberately NOT pre-chmod'ing here, unlike the Linux job. The whole
+      # point of this job is to find out whether macOS's VM-based Docker
+      # file-sharing layer hits the same permission issue Linux does, or
+      # whether it behaves differently. If this job fails at "Initialize and
+      # seed Vault" with the same "permission denied" error as Linux, that
+      # tells us the same fix is needed; if it fails differently or succeeds,
+      # that's new information this repo didn't have before.
+      - name: Start Vault
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --wait vault
+          sleep 2
+
+      - name: Initialize and seed Vault
+        run: bash scripts/init.sh
+
+      - name: Start consumer-app
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml up consumer-app -d
+
+      - name: Export AppRole credentials for pytest
+        run: |
+          ROLE_ID=$(awk -F'"' '/"role_id"/   {print $4}' .vault-init.json)
+          SECRET_ID=$(awk -F'"' '/"secret_id"/ {print $4}' .vault-init.json)
+          echo "::add-mask::$ROLE_ID"
+          echo "::add-mask::$SECRET_ID"
+          echo "VAULT_ROLE_ID=$ROLE_ID"         >> "$GITHUB_ENV"
+          echo "VAULT_SECRET_ID=$SECRET_ID"     >> "$GITHUB_ENV"
+          echo "VAULT_ADDR=http://localhost:8200" >> "$GITHUB_ENV"
+
+      - name: Run test suite
+        run: pytest tests/ -v
+
       - name: Tear down
         if: always()
         run: docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
