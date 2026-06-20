@@ -46,13 +46,16 @@ vault-secrets-demo/
 │   └── vault_client.py           # AppRole login + KV v2 fetch (hvac)
 ├── docs/
 │   ├── ARCHITECTURE.md           # this file
-│   ├── AWS_DEPLOYMENT.md         # EC2 deployment walkthrough
-│   └── screenshot.png            # demo screenshot (placeholder)
+│   └── AWS_DEPLOYMENT.md         # EC2 deployment walkthrough
 ├── scripts/
 │   ├── init.sh                   # one-time bootstrap: init, unseal, seed, AppRole
+│   ├── issue-consumer-creds.sh   # re-issue secret_id and rewrite .env.consumer
+│   ├── teardown.sh               # full local dev teardown (stops containers, clears vault/data/)
 │   └── unseal.sh                 # re-unseal after a restart
 ├── tests/
 │   ├── __init__.py
+│   ├── conftest.py               # vault_creds session fixture (env vars or .vault-init.json)
+│   ├── secret_values.py          # importable KNOWN_SECRET_VALUES for leakage tests
 │   ├── test_auth_failure.py      # wrong secret_id → clean failure, no crash
 │   ├── test_integration.py       # full stack: login + /status returns healthy
 │   ├── test_no_secret_leakage.py # asserts no secret value appears in output
@@ -66,7 +69,9 @@ vault-secrets-demo/
 ├── docker-compose.test.yml       # overlay for test environment
 ├── LICENSE
 ├── PRD.md
+├── pyproject.toml                # pytest paths configuration
 ├── README.md
+├── requirements-dev.txt          # test dependencies (pytest, httpx, pytest-mock)
 └── TICKETS.md
 ```
 
