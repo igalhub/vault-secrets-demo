@@ -5,7 +5,7 @@ Vault. Proves the AppRole authentication pattern end-to-end with a mock
 consumer app — deployable locally via Docker, with a documented path to
 AWS EC2.
 
-![Vault Secrets Demo screenshot](docs/screenshot.png)
+> **Screenshot:** a full-stack screenshot is pending (post-deploy); see `docs/AWS_DEPLOYMENT.md` for the expected `/status` output.
 
 > **What this is:** A reference implementation, not a production system.
 > It shows how to run Vault, authenticate a service to it without a
@@ -137,15 +137,22 @@ isn't a file in your repo or a page in a wiki.
 git clone https://github.com/igalhub/vault-secrets-demo.git
 cd vault-secrets-demo
 
-docker compose up -d
+# Step 1: start Vault only (.env.consumer doesn't exist yet)
+docker compose up vault -d
+
+# Step 2: initialize Vault, seed secrets, write .env.consumer
 bash scripts/init.sh
+
+# Step 3: start the consumer app (now that .env.consumer exists)
+docker compose up consumer-app -d
 ```
 
 `init.sh` initializes Vault, unseals it, enables the KV v2 engine, sets
-up the AppRole auth method and policy, and seeds the five demo secrets.
-It writes the unseal keys and root token to a **gitignored** local file —
-back this up if you want to manage Vault manually later; losing it means
-you'll need to start over with a fresh volume.
+up the AppRole auth method and policy, seeds the five demo secrets, and
+writes AppRole credentials to two **gitignored** local files
+(`.vault-init.json` and `.env.consumer`). Back up `.vault-init.json` if
+you want to manage Vault manually later — losing it means you'll need a
+fresh volume to recover.
 
 Verify it worked:
 
@@ -153,17 +160,64 @@ Verify it worked:
 curl http://localhost:8000/status
 ```
 
-You should see all five secrets reporting `"ok"`.
+Expected output (all six keys `"ok"`):
+
+```json
+{
+  "vault_auth": "ok",
+  "demo_db": "ok",
+  "demo_api_key": "ok",
+  "demo_connection_string": "ok",
+  "demo_signing_key": "ok",
+  "demo_webhook": "ok"
+}
+```
 
 ### Restarting after a stop
 
 Vault re-seals on every restart (manual unseal is intentional — see
-Design decisions above). To bring it back up:
+Design decisions above). The cleanest restart sequence:
 
 ```bash
-docker compose up -d
+# Start Vault first, then unseal before the consumer app tries to authenticate
+docker compose up vault -d
 bash scripts/unseal.sh
+docker compose up consumer-app -d
 ```
+
+Alternatively, if you bring everything up at once:
+
+```bash
+docker compose up -d            # consumer-app starts with vault_auth: "failed" (vault is sealed)
+bash scripts/unseal.sh          # unseal vault
+docker compose restart consumer-app   # re-authenticate now that vault is unsealed
+```
+
+### Recovery: missing or stale .env.consumer
+
+If `.env.consumer` is missing or out of date (e.g. you ran `init.sh`
+before the env file feature existed, or the secret_id expired), re-issue
+a fresh `secret_id` without re-initializing Vault:
+
+```bash
+bash scripts/issue-consumer-creds.sh
+docker compose up consumer-app -d
+```
+
+Requires an initialized, unsealed Vault and `.vault-init.json` present.
+
+### Starting fresh (local teardown)
+
+To fully reset the local environment — stop containers, clear Vault's
+storage, and remove credential files:
+
+```bash
+bash scripts/teardown.sh
+```
+
+This uses a throw-away container to clear `vault/data/` (files are owned
+by Vault's container UID, not your user, so `rm -rf` on the host would
+require `sudo`). After teardown, run the quickstart sequence again.
 
 ### AWS EC2 deployment
 
@@ -193,15 +247,34 @@ TLS with a real certificate.
 
 ## Testing
 
+Install dev dependencies first:
+
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.test.yml up -d
+pip install -r requirements-dev.txt
+```
+
+**Against the quickstart stack** (simplest — uses credentials already in
+`.vault-init.json`):
+
+```bash
+# Vault must be running and initialized (done during quickstart)
 pytest tests/ -v
+```
+
+**Against a fresh test stack** (replicates what CI does):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.test.yml up vault -d
+bash scripts/init.sh
+docker compose -f docker-compose.yml -f docker-compose.test.yml up consumer-app -d
+pytest tests/ -v
+docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
 ```
 
 The suite covers: AppRole login success/failure, secret fetch for all
 five secret shapes, and — critically — a leakage test that captures all
-stdout/stderr/HTTP response output during a full run and asserts none of
-the five real secret values ever appear anywhere in it.
+stdout/stderr/HTTP response output during a full startup + `/status` call
+and asserts none of the five demo secret values ever appear anywhere in it.
 
 ---
 
