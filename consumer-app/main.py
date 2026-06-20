@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from vault_client import VaultAuthError, VaultClient, VaultSecretError
+from vault_client import VaultAuthError, VaultClient
 
 _VAULT_ADDR = os.environ.get("VAULT_ADDR", "http://vault:8200")
 _VAULT_ROLE_ID = os.environ.get("VAULT_ROLE_ID", "")
@@ -77,7 +77,7 @@ def _bootstrap() -> None:
     for path, use_fn, key in _SECRETS:
         try:
             use_fn(client.get_secret(path))
-        except (VaultSecretError, Exception) as exc:
+        except Exception as exc:
             _status[key] = f"failed: {type(exc).__name__}"
 
 
