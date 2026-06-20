@@ -21,6 +21,18 @@ jobs:
       - name: Install dev dependencies
         run: pip install -r requirements-dev.txt
 
+      # ── Prepare vault/data ───────────────────────────────────────────────────
+      # The Vault image runs as an internal non-root UID (~100). On a fresh CI
+      # runner, Docker creates the bind-mount target directory as the host user,
+      # which that UID cannot write to (mkdir /vault/data/core: permission denied).
+      # Pre-creating it with 777 fixes that. Acceptable on an ephemeral runner;
+      # not something we'd do on a persistent host — see docs/AWS_DEPLOYMENT.md.
+      # Locally the directory is created by Docker on first run and the container
+      # can write freely (teardown.sh uses a container to clean it up precisely
+      # because host-user rm fails on those container-owned files).
+      - name: Prepare vault/data for container UID
+        run: mkdir -p vault/data && chmod 777 vault/data
+
       # ── Start Vault ──────────────────────────────────────────────────────────
       # --wait blocks until the Vault container's healthcheck passes (exit 2 =
       # sealed/uninitialized is explicitly allowed by the healthcheck, so this
