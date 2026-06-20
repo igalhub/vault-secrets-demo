@@ -24,7 +24,6 @@ _status: dict[str, str] = {
 
 
 def _use_demo_db(secret: dict) -> None:
-    print(secret["password"])
     conn = sqlite3.connect(":memory:")
     conn.execute("CREATE TABLE demo (user TEXT)")
     conn.execute("INSERT INTO demo VALUES (?)", (secret["username"],))
