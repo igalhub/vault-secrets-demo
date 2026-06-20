@@ -189,10 +189,12 @@ docker run --rm --entrypoint sh hashicorp/vault:1.17 \
 # Expected: vault:x:100:1000:...
 ```
 
-Verify it worked:
+Verify it worked (uvicorn needs a few seconds to complete the Vault login
+and five-secret bootstrap before the port is ready):
 
 ```bash
-curl http://localhost:8000/status
+curl --retry 10 --retry-delay 1 --retry-connrefused -sf \
+  http://localhost:8000/status
 ```
 
 Expected output (all six keys `"ok"`):
