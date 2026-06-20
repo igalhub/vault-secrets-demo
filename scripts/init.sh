@@ -128,10 +128,22 @@ cat > "$INIT_FILE" <<EOF
 }
 EOF
 
+# ── Write consumer-app env file ────────────────────────────────────────────────
+# VAULT_ADDR uses the Docker service name so the container can reach Vault
+# over the internal compose network — not localhost.
+
+cat > ".env.consumer" <<EOF
+VAULT_ADDR=http://vault:8200
+VAULT_ROLE_ID=${ROLE_ID}
+VAULT_SECRET_ID=${SECRET_ID}
+EOF
+
 echo ""
 echo "✅ Vault initialized and configured."
-echo "   Credentials written to ${INIT_FILE} (gitignored — back this file up;"
-echo "   losing it means starting over with a fresh volume)."
+echo "   ${INIT_FILE}   — full credentials (unseal key + root token + AppRole)"
+echo "   .env.consumer  — AppRole creds for docker compose (both gitignored)"
 echo ""
-echo "   To verify: docker exec -e VAULT_ADDR=http://127.0.0.1:8200 vault vault status"
-echo "   Next step: docker compose up -d  (starts consumer-app once VSD-005 is done)"
+echo "   Lose either file and you will need a fresh volume to recover."
+echo ""
+echo "   Next step: docker compose up -d"
+echo "   Verify:    curl http://localhost:8000/status"

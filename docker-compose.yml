@@ -19,3 +19,14 @@ services:
       timeout: 5s
       retries: 10
       start_period: 5s
+
+  consumer-app:
+    build:
+      context: ./consumer-app
+    container_name: consumer-app
+    ports:
+      - "8000:8000"
+    env_file: .env.consumer
+    depends_on:
+      vault:
+        condition: service_healthy
