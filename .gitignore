@@ -1,0 +1,30 @@
+# Secret-bearing files — must never be committed
+.vault-init.json
+unseal-keys.json
+root-token.txt
+*.env*
+.env.consumer
+
+# Vault file-storage data volume
+vault/data/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
