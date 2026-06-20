@@ -1,0 +1,72 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      # ── Start Vault ──────────────────────────────────────────────────────────
+      # --wait blocks until the Vault container's healthcheck passes (exit 2 =
+      # sealed/uninitialized is explicitly allowed by the healthcheck, so this
+      # returns as soon as Vault is listening, not after unseal).
+      - name: Start Vault
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml up vault -d --wait
+
+      # ── Bootstrap ────────────────────────────────────────────────────────────
+      # init.sh writes .vault-init.json and .env.consumer — both gitignored.
+      # The root token and unseal key stay in .vault-init.json on disk only;
+      # they are never printed to stdout and are not uploaded as artifacts.
+      - name: Initialize and seed Vault
+        run: bash scripts/init.sh
+
+      # ── Start consumer-app ───────────────────────────────────────────────────
+      # .env.consumer now exists (written by init.sh), so the container can start.
+      # Tests use FastAPI TestClient and don't call this container directly, but
+      # starting it validates the Docker build and the full compose stack.
+      - name: Start consumer-app
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml up consumer-app -d
+
+      # ── Export AppRole credentials ────────────────────────────────────────────
+      # role_id and secret_id are masked immediately so they never appear in
+      # any subsequent log line, even on pytest -v output.
+      # VAULT_ADDR points to localhost (host network) not the Docker service name.
+      - name: Export AppRole credentials for pytest
+        run: |
+          ROLE_ID=$(awk -F'"' '/"role_id"/   {print $4}' .vault-init.json)
+          SECRET_ID=$(awk -F'"' '/"secret_id"/ {print $4}' .vault-init.json)
+          echo "::add-mask::$ROLE_ID"
+          echo "::add-mask::$SECRET_ID"
+          echo "VAULT_ROLE_ID=$ROLE_ID"         >> "$GITHUB_ENV"
+          echo "VAULT_SECRET_ID=$SECRET_ID"     >> "$GITHUB_ENV"
+          echo "VAULT_ADDR=http://localhost:8200" >> "$GITHUB_ENV"
+
+      # ── Test suite ───────────────────────────────────────────────────────────
+      # Any leakage test failure exits non-zero and fails the build.
+      # To verify CI actually fails red on a leak (do this before merging,
+      # then revert): temporarily add `print(secret["value"])` to any _use_*
+      # function in main.py — test_no_secret_leakage.py will catch it.
+      - name: Run test suite
+        run: pytest tests/ -v
+
+      # ── Tear down ────────────────────────────────────────────────────────────
+      # -v removes volumes so no Vault data (including the root token in the
+      # file-storage backend) persists on the runner after the job ends.
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml down -v
