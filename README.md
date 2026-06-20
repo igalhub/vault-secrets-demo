@@ -5,7 +5,7 @@ Vault. Proves the AppRole authentication pattern end-to-end with a mock
 consumer app — deployable locally via Docker, with a documented path to
 AWS EC2.
 
-> **Screenshot:** a full-stack screenshot is pending (post-deploy); see `docs/AWS_DEPLOYMENT.md` for the expected `/status` output.
+![Vault Secrets Demo /status output](docs/screenshot.png)
 
 > **What this is:** A reference implementation, not a production system.
 > It shows how to run Vault, authenticate a service to it without a
