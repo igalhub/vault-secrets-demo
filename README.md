@@ -282,6 +282,75 @@ TLS with a real certificate.
 
 ---
 
+## Platform support
+
+This project draws a clear line between what's been tested end-to-end and
+what's reasonably expected to work but hasn't been verified. Two separate
+questions are involved, and they don't move together: **where you run the
+commands from** (your local dev machine) and **where Vault itself ends up
+running** (local, or a cloud VM).
+
+### Local development platform
+
+| Platform | Status | Notes |
+|---|---|---|
+| **Linux** | ✅ Tested | Every command, script, and bug fix in this repo was developed and verified on Ubuntu 24.04, including a genuine fresh-clone smoke test. Also verified in CI on every push (`ubuntu-latest`). |
+| **macOS** | ⚠️ Unverified — CI attempt was inconclusive | A CI job was added specifically to find out whether macOS hits the same bind-mount permission issue as Linux. It didn't get far enough to answer that question: Colima (the Docker runtime used to get Docker onto the GitHub-hosted macOS runner) failed to start its VM — `error starting vm: error at 'creating and starting': exit status 1`. This is a known limitation of nested virtualization on GitHub's hosted macOS runners, not a bug in this project. Verifying macOS support properly requires testing on real Mac hardware with Docker Desktop installed natively, which hasn't been done yet. |
+| **Windows** | ❌ Requires a different setup, untested | The `.sh` scripts (`init.sh`, `unseal.sh`, `teardown.sh`, etc.) need a bash-compatible environment to run at all — native Windows `cmd`/PowerShell can't execute them directly. **WSL2** is the recommended path; Git Bash may work for some scripts but isn't verified. `sudo chown` has no direct Windows equivalent outside WSL2. Treat this as "needs porting," not "needs minor adjustment." |
+
+### Why the bind-mount permission issue matters here
+
+Several scripts in this repo work around a specific bug: Vault's official
+Docker image runs its server process as a non-root internal user
+(UID 100), but a bind-mounted `vault/data/` directory created fresh by
+Docker Compose is typically owned by your host user, not UID 100 — so
+Vault can't write to it until you manually run
+`sudo chown 100 vault/data`. This was found and fixed during development
+on Linux (and confirmed to affect a real GitHub Actions Linux CI runner
+too, fixed there with a `chmod`). Whether this exact issue, exactly this
+way, appears on macOS or Windows-via-WSL2 is still unknown — the
+underlying cause (container UID vs. host-created directory ownership) is
+Docker-architecture-specific, not Linux-specific, so it's reasonable to
+expect *some* version of this issue on other platforms, but neither the
+exact symptom nor the fix has been confirmed there.
+
+### Cloud deployment target
+
+Separately from your local dev platform, Vault itself can be deployed to
+a cloud VM. This is a different axis — you could, for example, develop
+from a Mac while deploying Vault to an AWS Linux instance.
+
+| Cloud | Status | Notes |
+|---|---|---|
+| **AWS (EC2)** | ✅ Tested | Full walkthrough in `docs/AWS_DEPLOYMENT.md`, including the security group configuration, the same bind-mount permission fix (verified to reproduce on a fresh EC2 instance and confirmed fixed), and the manual-unseal-after-reboot limitation. |
+| **Azure / GCP / other clouds** | ⚠️ Pattern transfers, untested | The underlying setup — a Docker container running Vault with a bind-mounted data volume — is cloud-agnostic by design, which is the whole premise of using Vault over a cloud-proprietary secrets service (see the comparison table above). The general approach (provision a VM, install Docker, clone, fix bind-mount permissions, run `init.sh`) should transfer directly. What's **not** done yet is writing out the cloud-specific provisioning steps (security group equivalents, VM sizing, IAM/access-control specifics) for any provider besides AWS. If you deploy this to Azure or GCP, the Docker-level steps from `docs/AWS_DEPLOYMENT.md` should apply almost verbatim from Step 4 onward (Install Docker) — only Steps 1–3 (VM provisioning and network/firewall rules) would need provider-specific instructions. |
+
+### Summary
+
+**Confidently claimed:** Linux local dev, AWS EC2 deployment — both
+tested through a full fresh-environment verification pass, including bugs
+found and fixed along the way.
+
+**Attempted, inconclusive:** macOS local dev — a CI verification attempt
+was made and is documented in `.github/workflows/test.yml`
+(`test-macos`, marked `continue-on-error: true` so it doesn't block
+merges), but it couldn't get past a GitHub Actions runner limitation
+unrelated to this project. Real-hardware testing is still needed.
+
+**Reasonably expected, not yet verified:** Azure/GCP deployment — same
+underlying technology (Docker, bind mounts), no reason to expect
+fundamentally different behavior, but not run and confirmed.
+
+**Needs a different setup, not just an adjustment:** Windows local dev
+without WSL2 — the script execution model itself doesn't match native
+Windows.
+
+If you test this on macOS (real hardware), Windows/WSL2, or another cloud
+provider, contributions documenting what you found (working as-is, needed
+a tweak, or hit a new issue) are welcome — see Contributing.
+
+---
+
 ## Testing
 
 Install dev dependencies first:
