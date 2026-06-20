@@ -137,6 +137,11 @@ isn't a file in your repo or a page in a wiki.
 git clone https://github.com/igalhub/vault-secrets-demo.git
 cd vault-secrets-demo
 
+# Pre-create vault/data/ with ownership that Vault's container user can write to.
+# (See troubleshooting note below for why this is required.)
+mkdir -p vault/data
+sudo chown 100 vault/data
+
 # Step 1: start Vault only (.env.consumer doesn't exist yet)
 docker compose up vault -d
 
@@ -153,6 +158,36 @@ writes AppRole credentials to two **gitignored** local files
 (`.vault-init.json` and `.env.consumer`). Back up `.vault-init.json` if
 you want to manage Vault manually later — losing it means you'll need a
 fresh volume to recover.
+
+### Troubleshooting: `mkdir /vault/data/core: permission denied`
+
+If you see this error from `scripts/init.sh`, the cause is a container
+UID mismatch on the bind mount.
+
+**What happens:** the Vault image's entrypoint uses `su-exec` to run the
+Vault server process as the internal `vault` user (UID 100) rather than
+as root. On a fresh `git clone`, `vault/data/` doesn't exist (it's
+gitignored). When Docker Compose creates it automatically, it creates it
+as `root:root 755`. UID 100 is not root and can't write to a root-owned
+directory, so the first write (`vault operator init` creating
+`vault/data/core/`) fails with `permission denied`.
+
+**Fix:**
+
+```bash
+docker compose down
+sudo chown 100 vault/data
+docker compose up vault -d
+bash scripts/init.sh
+```
+
+To verify that 100 is the right UID for the image version you're using:
+
+```bash
+docker run --rm --entrypoint sh hashicorp/vault:1.17 \
+  -c 'grep vault /etc/passwd'
+# Expected: vault:x:100:1000:...
+```
 
 Verify it worked:
 
