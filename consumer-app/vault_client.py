@@ -36,6 +36,7 @@ class VaultClient:
             response = self._client.secrets.kv.v2.read_secret_version(
                 path=path,
                 mount_point="secret",
+                raise_on_deleted_version=True,
             )
         except Exception as exc:
             raise VaultSecretError(f"Failed to read '{path}': {type(exc).__name__}") from exc

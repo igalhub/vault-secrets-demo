@@ -1,0 +1,13 @@
+# Test environment overlay — use with:
+#   docker compose -f docker-compose.yml -f docker-compose.test.yml up -d
+#
+# Differences from the dev stack:
+#   - Vault logs are quieter (error level only) to keep CI output readable
+#   - consumer-app won't restart on failure so CI doesn't loop on a broken image
+services:
+  vault:
+    environment:
+      VAULT_LOG_LEVEL: error
+
+  consumer-app:
+    restart: "no"
