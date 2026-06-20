@@ -37,10 +37,32 @@ fi
 
 # ── Initialize ─────────────────────────────────────────────────────────────────
 
+# Print Vault status so CI logs show exactly what state we're operating against.
+echo "==> Vault status before init:"
+vault_exec status 2>&1 || true
+
 echo "==> Initializing Vault (1 unseal key, threshold 1 — appropriate for a demo)..."
 # Using -key-shares=1 -key-threshold=1 to keep unseal simple for a single-node demo.
 # A production deployment would use a higher shares/threshold (e.g. 5/3).
-init_output=$(vault_exec operator init -key-shares=1 -key-threshold=1 2>&1)
+#
+# Retried up to 3 times: the Docker healthcheck can pass while Vault's internal
+# storage layer is still settling, causing the first init attempt to fail in CI.
+# Stderr is NOT redirected so Vault's error messages always appear in the log.
+init_output=""
+init_rc=0
+for attempt in 1 2 3; do
+  set +e
+  init_output=$(vault_exec operator init -key-shares=1 -key-threshold=1)
+  init_rc=$?
+  set -e
+  [ "$init_rc" -eq 0 ] && break
+  if [ "$attempt" -eq 3 ]; then
+    echo "ERROR: vault operator init failed after 3 attempts (last exit code: ${init_rc})." >&2
+    exit 1
+  fi
+  echo "   Attempt ${attempt} failed (exit ${init_rc}), retrying in 3s..." >&2
+  sleep 3
+done
 
 UNSEAL_KEY=$(echo "$init_output" | awk '/^Unseal Key 1:/ {print $NF}')
 ROOT_TOKEN=$(echo "$init_output"  | awk '/^Initial Root Token:/ {print $NF}')
