@@ -1,0 +1,21 @@
+services:
+  vault:
+    image: hashicorp/vault:1.17
+    container_name: vault
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_ADDR: "http://127.0.0.1:8200"
+    volumes:
+      - ./vault/config:/vault/config:ro
+      - ./vault/data:/vault/data
+    cap_add:
+      - IPC_LOCK
+    command: ["vault", "server", "-config=/vault/config/vault-config.hcl"]
+    healthcheck:
+      # exit 2 = sealed (expected before init.sh runs); exit 1 = unreachable
+      test: ["CMD-SHELL", "vault status; [ $? -ne 1 ]"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
