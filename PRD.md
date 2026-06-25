@@ -26,10 +26,10 @@ using HashiCorp Vault that runs identically on a laptop or any cloud VM.
 
 ## Success criteria
 - A fresh clone + `docker compose up` + init script gets Vault running,
-  unsealed, and seeded with one synthetic secret in under 5 minutes
-- The demo consumer app authenticates via AppRole, fetches the secret,
-  and prints only `✅ Connected to mock-db` or `❌ Connection failed` —
-  never the secret value
+  unsealed, and seeded with five synthetic secrets in under 5 minutes
+- The demo consumer app authenticates via AppRole, fetches all five
+  secrets, uses each in a small illustrative way, and returns a
+  per-secret ok/failed status via `GET /status` — never the secret values
 - All tests pass: `pytest` suite covers auth failure, successful fetch,
   and secret-value-never-logged assertion
 - README documents the AWS EC2 deployment path clearly enough to follow
@@ -48,10 +48,11 @@ Docker Compose
   │     unsealed manually via init.sh / unseal.sh
   └── Demo consumer app (FastAPI)
         1. Authenticates to Vault via AppRole (role_id + secret_id)
-        2. Fetches secret/data/demo-db
-        3. "Connects" to a mock DB using the fetched credential
-        4. Exposes GET /status -> {"vault_auth": "ok", "db_connection": "ok"}
-           (never returns the secret itself)
+        2. Fetches all five secrets (demo-db, demo-api-key,
+           demo-connection-string, demo-signing-key, demo-webhook)
+        3. Uses each in a small illustrative way (mocked — no real calls)
+        4. Exposes GET /status -> per-secret ok/failed JSON
+           (never returns a secret value)
 ```
 
 Full architecture detail: see `docs/ARCHITECTURE.md`.
@@ -63,7 +64,7 @@ Full architecture detail: see `docs/ARCHITECTURE.md`.
 | File storage backend, not Consul/Raft | Simpler for a demo; the auth/secrets pattern is the teaching point, not HA storage |
 | Manual unseal | More instructive — operator sees the actual unseal mechanic instead of it being hidden by auto-unseal |
 | AppRole over token | Matches production practice; `secret_id` can be rotated/revoked independently of `role_id` |
-| Read-only policy scoped to one path | Principle of least privilege — demo app can't read or write anything else in Vault |
+| Read-only policy scoped to `demo-*` paths | Principle of least privilege — demo app can't read or write anything else in Vault |
 | Mock DB, not a real one | Keeps the demo focused on the secrets pattern, not database setup |
 
 ## Definition of done (project-level)
