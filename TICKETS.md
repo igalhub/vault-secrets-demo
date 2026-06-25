@@ -260,3 +260,19 @@ delegated to Developer/QA roles, performed by the project owner directly.
   initial scaffold)
 
 **Dependencies:** All previous tickets DONE
+
+---
+
+## Ticket status
+
+| Ticket | Title | Status |
+|---|---|---|
+| VSD-001 | Repo scaffolding and gitignore | DONE |
+| VSD-002 | Vault server configuration | DONE |
+| VSD-003 | init.sh — operator bootstrap script | DONE |
+| VSD-004 | vault_client.py — AppRole login and secret fetch | DONE |
+| VSD-005 | Demo consumer app — FastAPI service | DONE |
+| VSD-006 | Test suite — leakage and failure-mode coverage | DONE |
+| VSD-007 | CI pipeline | DONE |
+| VSD-008 | README and documentation | DONE |
+| VSD-009 | Pre-publish security audit | DONE |
