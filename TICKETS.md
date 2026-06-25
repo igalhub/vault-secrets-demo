@@ -10,7 +10,7 @@ QA updates status to `REJECTED` (with notes) or hands back to PM for final
 
 ## VSD-001: Repo scaffolding and gitignore
 
-**Status:** TODO
+**Status:** DONE
 
 **Description:** Create the base repository structure as defined in
 ARCHITECTURE.md — all directories, empty placeholder files where needed,
@@ -31,7 +31,7 @@ code is written.
 
 ## VSD-002: Vault server configuration (no app yet)
 
-**Status:** TODO
+**Status:** DONE
 
 **Description:** Configure the Vault service in `docker-compose.yml` with
 file storage backend and a listener config in `vault/config/vault-config.hcl`.
@@ -50,7 +50,7 @@ No TLS yet (local dev only at this stage).
 
 ## VSD-003: init.sh — operator bootstrap script
 
-**Status:** TODO
+**Status:** DONE
 
 **Description:** Write `scripts/init.sh` to fully bootstrap a fresh Vault
 instance: init, unseal, enable KV v2, write policy, enable AppRole, create
@@ -105,7 +105,7 @@ handle real keys."
 
 ## VSD-004: vault_client.py — AppRole login and secret fetch
 
-**Status:** TODO
+**Status:** DONE
 
 **Description:** Implement `consumer-app/vault_client.py` using the `hvac`
 library: AppRole login given `role_id` + `secret_id`, fetch a secret by
@@ -126,7 +126,7 @@ mocked in unit tests)
 
 ## VSD-005: Demo consumer app — FastAPI service
 
-**Status:** TODO
+**Status:** DONE
 
 **Description:** Implement `consumer-app/main.py`: on startup, use
 `vault_client.py` to authenticate and fetch all five demo secrets
@@ -169,7 +169,7 @@ external calls):**
 
 ## VSD-006: Test suite — leakage and failure-mode coverage
 
-**Status:** TODO
+**Status:** DONE
 
 **Description:** Implement the full test suite per the testing spec:
 `test_vault_client.py`, `test_auth_failure.py`, `test_no_secret_leakage.py`,
@@ -195,7 +195,7 @@ external calls):**
 
 ## VSD-007: CI pipeline
 
-**Status:** TODO
+**Status:** DONE
 
 **Description:** GitHub Actions workflow that spins up the full stack,
 runs `init.sh` in a CI-safe mode, runs the test suite, and tears down —
@@ -217,7 +217,7 @@ failing the build hard on any secret-leakage test failure.
 
 ## VSD-008: README and documentation
 
-**Status:** TODO
+**Status:** DONE
 
 **Description:** Write the public-facing `README.md`, `docs/ARCHITECTURE.md`,
 and `docs/AWS_DEPLOYMENT.md`.
@@ -245,7 +245,7 @@ final)
 
 ## VSD-009: Pre-publish security audit
 
-**Status:** TODO
+**Status:** DONE
 
 **Description:** Final manual pass before the repo goes public — not
 delegated to Developer/QA roles, performed by the project owner directly.
