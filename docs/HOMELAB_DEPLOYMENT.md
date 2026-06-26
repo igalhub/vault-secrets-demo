@@ -60,7 +60,7 @@ Expected output:
 
 Since the VM has a static IP, access the consumer app from any machine
 on your network:
-http://<VM_IP>:8000/status
+`http://<VM_IP>:8000/status`
 Replace `<VM_IP>` with your VM's static IP address.
 
 ## Notes
