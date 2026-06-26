@@ -71,3 +71,31 @@ Replace `<VM_IP>` with your VM's static IP address.
   required on Ubuntu Server just as it is on desktop Linux
 - Vault re-seals on every restart — run `bash scripts/unseal.sh` after
   any VM reboot before starting the consumer app
+
+## Integration with expiry-watcher
+
+This Vault instance serves as the backend for
+[expiry-watcher](https://github.com/igalhub/expiry-watcher). Once
+vault-secrets-demo is running, create a short-TTL AppRole for
+expiry-watcher to monitor:
+
+```bash
+export VAULT_TOKEN=<root-token-from-.vault-init.json>
+cd ~/expiry-watcher
+bash scripts/vault_setup_test_role.sh
+```
+
+The script prints a `role_id` and `secret_id` — copy them into
+`expiry-watcher/config/vault.yaml`. See expiry-watcher's
+`docs/HOMELAB_DEPLOYMENT.md` for the next steps.
+
+## Running alongside other projects
+
+This project was tested running simultaneously with:
+- **expiry-watcher** (port 8080)
+- **docker-sentinel** (port 8081)
+- **kube-sentinel** (Grafana port 30093, Prometheus port 31664)
+- **Portainer** (port 9000)
+
+No port conflicts. All containers are visible and manageable via
+Portainer at `http://<VM_IP>:9000`.
