@@ -263,6 +263,29 @@ delegated to Developer/QA roles, performed by the project owner directly.
 
 ---
 
+## VSD-010 — Home lab deployment documentation
+
+**Goal:** Document deployment on a Proxmox home lab environment and
+integration with other portfolio projects.
+
+**Deliverables:**
+- `docs/HOMELAB_DEPLOYMENT.md` — full deployment walkthrough for
+  Proxmox VE + Ubuntu Server VM environment
+- README platform support table updated with home lab entry
+- Integration notes for expiry-watcher AppRole setup
+- Multi-project coexistence documented (ports, Portainer visibility)
+
+**Tested on:**
+- Proxmox VE 9.2.3, Beelink SER mini PC
+- Ubuntu Server 24.04.3 LTS VM
+- Docker 29.6.0
+
+**Dependencies:** VSD-008, VSD-009
+
+**Status: DONE**
+
+---
+
 ## Ticket status
 
 | Ticket | Title | Status |
@@ -276,3 +299,4 @@ delegated to Developer/QA roles, performed by the project owner directly.
 | VSD-007 | CI pipeline | DONE |
 | VSD-008 | README and documentation | DONE |
 | VSD-009 | Pre-publish security audit | DONE |
+| VSD-010 | Home lab deployment documentation | DONE |
