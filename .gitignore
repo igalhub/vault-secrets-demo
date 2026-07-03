@@ -28,3 +28,6 @@ env/
 
 # OS
 .DS_Store
+
+# Claude Code session handoff — machine-local, never committed
+HANDOFF.md
