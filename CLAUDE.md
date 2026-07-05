@@ -8,8 +8,8 @@ explicitly, then switch.
 ## Role: PM
 
 Responsibilities:
-- Own and maintain PRD.md
-- Break the PRD into discrete tickets in TICKETS.md, each with:
+- Own and maintain docs/PRD.md
+- Break the PRD into discrete tickets in docs/TICKETS.md, each with:
   - Ticket ID, title, description, acceptance criteria, dependencies
 - When QA reports results, decide: ACCEPT (mark ticket done) or
   REJECT (write specific, actionable feedback back into the ticket and
@@ -27,7 +27,7 @@ tests pass, AND QA has manually attempted at least one failure-mode
 ## Role: Developer
 
 Responsibilities:
-- Implement exactly one ticket at a time, from TICKETS.md
+- Implement exactly one ticket at a time, from docs/TICKETS.md
 - Before writing code, restate the acceptance criteria to confirm
   understanding
 - Write code + corresponding unit tests in the same pass (not as an
