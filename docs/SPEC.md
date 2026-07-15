@@ -90,7 +90,11 @@ Vault CLI required. Sequence:
 4. **Unseal** — feeds the one unseal key back in.
 5. **KV v2 mount, AppRole auth method, read-only policy, AppRole role**
    — created via authenticated (`vault_exec_root`, using the root token
-   from step 3) calls.
+   from step 3) calls. The `approle` auth mount is tuned to
+   `max-lease-ttl=90d` before the role is written, since Vault's default
+   32-day mount cap would otherwise silently clamp the role's
+   `secret_id_ttl=90d` (VSD-011) — this ensures `secret_id`s actually
+   expire and are rotatable, rather than living forever.
 6. **Seed the five demo secrets** at `secret/demo-*` — the fake,
    provider-format-avoiding placeholder values described in the README.
 7. **Write credentials** — `.vault-init.json` (root token + unseal key,
@@ -105,6 +109,7 @@ Vault CLI required. Sequence:
 | `test_auth_failure.py` | Wrong/revoked AppRole credentials fail cleanly — `vault_auth` reports `"failed: ..."`, app doesn't crash |
 | `test_integration.py` | Full stack against a real Vault (via the `vault` pytest marker / live docker-compose target in CI) |
 | `test_no_secret_leakage.py` | The actual security property this project exists to demonstrate |
+| `test_role_config.py` | Vault-side role config — asserts the `demo-app` role's `secret_id_ttl` stays finite (VSD-011 regression guard) |
 
 `test_no_secret_leakage.py`'s strategy: `secret_values.py` holds the
 known plaintext of every seeded demo secret

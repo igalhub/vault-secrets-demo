@@ -46,7 +46,11 @@ vault-secrets-demo/
 │   └── vault_client.py           # AppRole login + KV v2 fetch (hvac)
 ├── docs/
 │   ├── ARCHITECTURE.md           # this file
-│   └── AWS_DEPLOYMENT.md         # EC2 deployment walkthrough
+│   ├── AWS_DEPLOYMENT.md         # EC2 deployment walkthrough
+│   ├── HOMELAB_DEPLOYMENT.md     # Proxmox home lab deployment walkthrough
+│   ├── PRD.md                    # problem statement, goals, success criteria
+│   ├── SPEC.md                   # code-level spec: consumer-app, init.sh, tests
+│   └── TICKETS.md                # ticket-by-ticket PM/Developer/QA history
 ├── scripts/
 │   ├── init.sh                   # one-time bootstrap: init, unseal, seed, AppRole
 │   ├── issue-consumer-creds.sh   # re-issue secret_id and rewrite .env.consumer
@@ -59,20 +63,21 @@ vault-secrets-demo/
 │   ├── test_auth_failure.py      # wrong secret_id → clean failure, no crash
 │   ├── test_integration.py       # full stack: login + /status returns healthy
 │   ├── test_no_secret_leakage.py # asserts no secret value appears in output
+│   ├── test_role_config.py       # demo-app role's secret_id_ttl stays finite
 │   └── test_vault_client.py      # unit tests for vault_client.py (mocked hvac)
 ├── vault/
 │   ├── config/
 │   │   └── vault-config.hcl      # listener, storage, log config — safe to commit
 │   └── data/                     # Vault file-storage volume (gitignored)
 ├── .gitignore
+├── CHANGELOG.md
+├── CLAUDE.md
 ├── docker-compose.yml
 ├── docker-compose.test.yml       # overlay for test environment
 ├── LICENSE
-├── PRD.md
 ├── pyproject.toml                # pytest paths configuration
 ├── README.md
-├── requirements-dev.txt          # test dependencies (pytest, httpx, pytest-mock)
-└── TICKETS.md
+└── requirements-dev.txt          # test dependencies (pytest, httpx, pytest-mock)
 ```
 
 ---
