@@ -101,12 +101,24 @@ EOF
 echo "==> Enabling AppRole auth method..."
 vault_exec_root auth enable approle
 
+# The approle mount defaults to a 32-day max_lease_ttl, which silently caps
+# any role's secret_id_ttl above that — so demo-app's 90d setting below
+# would otherwise be issued as 32 days without this tune (VSD-011). This
+# raises the ceiling for every role on this mount, including any other
+# project's role that shares this same Vault instance (e.g. expiry-watcher,
+# see docs/HOMELAB_DEPLOYMENT.md) — but it's a maximum, not a forced value,
+# so a role that already requests a shorter TTL is unaffected.
+vault_exec_root auth tune -max-lease-ttl=90d approle
+
 echo "==> Creating demo-app role..."
+# secret_id_ttl=90d: finite so the credential is rotatable/revocable in
+# practice (VSD-011) — long enough that no CI run or normal dev cycle
+# ever hits it, short enough to not be security theater.
 vault_exec_root write auth/approle/role/demo-app \
   token_policies=demo-app-policy \
   token_ttl=1h \
   token_max_ttl=4h \
-  secret_id_ttl=0
+  secret_id_ttl=90d
 
 # ── Seed secrets ───────────────────────────────────────────────────────────────
 
