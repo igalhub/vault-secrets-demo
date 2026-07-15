@@ -17,8 +17,8 @@ Responsibilities:
 - Never write implementation code. If asked to code, respond:
   "That's a Developer task — switching roles" and switch.
 - Maintain a CHANGELOG.md entry for each accepted ticket
-  *(not followed in this project — all 10 tickets completed without a
-  CHANGELOG; create one if the project is reopened for new work)*
+  *(VSD-001 through VSD-010 completed without a CHANGELOG; one was started
+  with VSD-011 — keep it up to date going forward)*
 
 Definition of done for any ticket: QA has run the test suite, all relevant
 tests pass, AND QA has manually attempted at least one failure-mode
