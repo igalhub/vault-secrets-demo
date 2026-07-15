@@ -286,6 +286,47 @@ integration with other portfolio projects.
 
 ---
 
+## VSD-011: AppRole `secret_id` given a finite TTL
+
+**Status:** DONE
+
+**Description:** `scripts/init.sh` currently creates the `demo-app` AppRole
+role with `secret_id_ttl=0`, which is Vault's syntax for "this secret_id
+never expires." This contradicts the README's provider-comparison table,
+which claims "AppRole `secret_id` and tokens have TTLs." Give the
+`secret_id` a finite, demo-appropriate TTL so the credential's lifecycle
+actually matches the README's claim, and add a regression test so this
+can't silently regress back to unlimited.
+
+**Acceptance criteria:**
+- `auth/approle/role/demo-app` is created with a non-zero, finite
+  `secret_id_ttl` (target: 90 days) — long enough that the
+  quickstart/CI flow is never at risk of hitting it, short enough to be a
+  real TTL and not security theater. Documented with a one-line comment
+  in `init.sh`, matching the existing comment style next to
+  `token_ttl`/`token_max_ttl`.
+- `vault read auth/approle/role/demo-app` after running `scripts/init.sh`
+  shows the new finite value, not `0`.
+- A fresh `secret_id` issued via `scripts/init.sh` or
+  `scripts/issue-consumer-creds.sh` inherits the new TTL automatically —
+  confirmed empirically, no code change needed in
+  `issue-consumer-creds.sh`.
+- A new regression test asserts the configured `secret_id_ttl` on the
+  `demo-app` role is non-zero, and is mutation-tested (proven to fail red
+  at `secret_id_ttl=0`, pass green at the fix).
+- Full existing test suite still passes: `pytest tests/ -v`.
+- No change to `demo-app-policy`'s read-only scope
+  (`secret/data/demo-*` only, capabilities `["read"]`).
+- README's TTL claim in the comparison table remains accurate; a one-line
+  note added near the table documenting the 90-day value and the
+  recovery path (`scripts/issue-consumer-creds.sh`) if it's ever hit.
+- Explicit secrets scan on the diff before shipping.
+
+**Dependencies:** None — touches `scripts/init.sh`, a new test file, and
+doc/comment lines only; all previously-DONE tickets are unaffected.
+
+---
+
 ## Ticket status
 
 | Ticket | Title | Status |
@@ -300,3 +341,4 @@ integration with other portfolio projects.
 | VSD-008 | README and documentation | DONE |
 | VSD-009 | Pre-publish security audit | DONE |
 | VSD-010 | Home lab deployment documentation | DONE |
+| VSD-011 | AppRole `secret_id` given a finite TTL | DONE |

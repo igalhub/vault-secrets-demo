@@ -17,6 +17,10 @@ class VaultClient:
         self._client: hvac.Client | None = None
 
     def login(self) -> None:
+        # secret_id is safe here: passed directly to hvac's login() and never
+        # stored past this call or logged. Called once at startup with no
+        # auto-refresh — if secret_id_ttl expires before a restart, re-run
+        # scripts/issue-consumer-creds.sh.
         client = hvac.Client(url=self._url)
         try:
             client.auth.approle.login(

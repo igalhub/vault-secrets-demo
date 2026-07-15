@@ -41,6 +41,11 @@ gaps:
 | Cost | Free (if you already pay for Confluence) | Free | Free (Community Edition) |
 | Works the same on any host/cloud | N/A | ✅ Yes — it's just a file | ✅ Yes — same Docker image anywhere |
 
+`secret_id_ttl` for the demo-app AppRole is set to 90 days in
+`scripts/init.sh`. If it's ever hit (e.g. a long-lived consumer-app
+container that only authenticates at startup), re-run
+`scripts/issue-consumer-creds.sh` to issue a fresh `secret_id`.
+
 **The honest summary:** SOPS is a meaningful upgrade over a wiki page —
 real encryption, versioned, no plaintext ever at rest. But it's still a
 *static file* model. Vault is the bigger leap because it's a live
